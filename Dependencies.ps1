@@ -106,7 +106,7 @@ function BuildFreeRDP($buildDir, $outputPath, $patchesPath, $cmakeGenerator, $pl
 
         # Verify that FreeRDP runs properly so when know that all dependencies are in place
         $p = Start-Process -Wait -PassThru -NoNewWindow "$outputPath\wfreerdp.exe"
-        if($p.ExitCode)
+        if($p.ExitCode -ne 1)
         {
             throw "wfreerdp test run failed with exit code: $($p.ExitCode)"
         }
