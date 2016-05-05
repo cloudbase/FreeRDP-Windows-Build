@@ -21,13 +21,15 @@ function BuildOpenSSL($buildDir, $outputPath, $opensslVersion, $cmakeGenerator, 
 {
     $opensslBase = "openssl-$opensslVersion"
     $opensslPath = "$ENV:Temp\$opensslBase.tar.gz"
-    $opensslUrl = "http://www.openssl.org/source/$opensslBase.tar.gz"
+    $opensslUrl = "https://www.openssl.org/source/$opensslBase.tar.gz"
 
     pushd .
     try
     {
         cd $buildDir
 
+        # Needed by the OpenSSL server 
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         ExecRetry { (new-object System.Net.WebClient).DownloadFile($opensslUrl, $opensslPath) }
 
         if($hash) { ChechFileHash $opensslPath $hash }
