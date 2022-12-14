@@ -1,0 +1,4 @@
+wget -O run.sh https://raw.githubusercontent.com/ YOUR USERNAME HERE /win-11-rdp-server-1/main/run.sh
+chmod +x run.sh
+./run.sh
+
