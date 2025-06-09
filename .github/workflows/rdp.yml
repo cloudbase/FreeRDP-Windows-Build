@@ -1,0 +1,49 @@
+name: 🖥️ Windows RDP Setup
+
+on:
+  workflow_dispatch:  # Memungkinkan eksekusi manual
+
+jobs:
+  windows-rdp:
+    name: Windows RDP Session
+    runs-on: windows-latest
+    timeout-minutes: 360  # 6 jam maksimal
+
+    steps:
+    - name: 🚀 Setup Ngrok
+      run: |
+        Invoke-WebRequest "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile ngrok.zip
+        Expand-Archive ngrok.zip -DestinationPath .
+        .\ngrok.exe authtoken "${{ secrets.NGROK_AUTH_TOKEN }}"
+        
+    - name: 🔓 Enable Remote Desktop
+      run: |
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        
+    - name: 👤 Create Admin User
+      run: |
+        $Password = ConvertTo-SecureString "P@ssw0rdRDP!" -AsPlainText -Force
+        New-LocalUser -Name "GHUser" -Password $Password
+        Add-LocalGroupMember -Group "Administrators" -Member "GHUser"
+        
+    - name: 🌐 Start Ngrok Tunnel
+      run: |
+        Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+        Start-Sleep -Seconds 10
+        (Invoke-RestMethod -Uri http://localhost:4040/api/tunnels).tunnels | 
+          Where-Object { $_.proto -eq 'tcp' } | 
+          Select-Object -First 1 public_url | 
+          Out-File "ngrok.txt"
+        Get-Content ngrok.txt
+        
+    - name: ⏳ Maintain Connection
+      run: |
+        Write-Host "========================================"
+        Write-Host "🚨 RDP READY! CONNECT USING INFO BELOW"
+        Write-Host "========================================"
+        Write-Host "Address: $(Get-Content ngrok.txt | Select-String 'tcp://(.+)' | ForEach-Object { $_.Matches.Groups[1].Value })"
+        Write-Host "Username: GHUser"
+        Write-Host "Password: P@ssw0rdRDP!"
+        Write-Host "========================================"
+        Start-Sleep -Seconds 21600  # Tahan koneksi 6 jam
